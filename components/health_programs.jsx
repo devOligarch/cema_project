@@ -6,15 +6,19 @@ import {
   Text,
   TextInput,
 } from "@mantine/core"
-import React, { useCallback, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import HealthProgram from "./health_program"
-import { IconPlus } from "@tabler/icons-react"
+import { IconCheck, IconPlus } from "@tabler/icons-react"
 import { Formik } from "formik"
+import { notifications } from "@mantine/notifications"
 
 function HealthPrograms() {
   const [keyword, setKeyword] = useState("")
   const [newProgram, setNewProgram] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [programs, setPrograms] = useState([])
 
+  // Handle keyword change for search filter
   const handleChangeKeyword = useCallback(
     (e) => {
       setKeyword(e.target.value)
@@ -22,45 +26,83 @@ function HealthPrograms() {
     [keyword]
   )
 
+  // Opens a new program modal
   const handleOpenNewProgram = useCallback(() => {
     setNewProgram(true)
   }, [newProgram])
 
+  // Closes new program modal
   const handleCloseNewProgram = useCallback(() => {
     setNewProgram(false)
   }, [newProgram])
 
+  // This function saves the program to the database using the /api/new_program endpoint
   const saveProgramToDB = async (program) => {
-    // return fetch("/api/hello", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify(program),
-    // }).then((res) => res.json())
+    return fetch("/api/new_program", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(program),
+    }).then(async (res) => {
+      return res.status
+    })
   }
+
+  // This function is a callback that compares each program to the search query
+  const handleFilter = (program) =>
+    keyword.length === 0 ||
+    program?.name?.toLowerCase()?.includes(keyword.toLowerCase())
+
+  // This function fetches all programs using our /api/get_programs endpoint
+  const fetchPrograms = async () => {
+    setLoading(true)
+
+    try {
+      const res = await fetch("/api/get_programs")
+      const data = await res.json()
+
+      console.log(data.programs)
+      setPrograms(data.programs)
+    } catch (error) {
+      console.error("Failed to fetch programs", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch programs on initial page load
+  useEffect(() => {
+    fetchPrograms()
+  }, [])
 
   return (
     <div className="p-4">
-      <div className="flex space-x-4 items-center">
-        <Input
-          placeholder="Search health program ex. Malaria"
-          value={keyword}
-          className="w-4/5"
-          onChange={handleChangeKeyword}
-        />
-        <Button onClick={handleOpenNewProgram} leftSection={<IconPlus />}>
-          Add program
-        </Button>
+      {/* Program search */}
+      <div className="lg:flex space-y-2 space-x-4 items-center">
+        <div className="lg:w-4/5">
+          <Input
+            placeholder="Search health program ex. Malaria"
+            value={keyword}
+            className="w-full"
+            onChange={handleChangeKeyword}
+          />
+        </div>
+        <div className="flex justify-center ">
+          <Button onClick={handleOpenNewProgram} leftSection={<IconPlus />}>
+            Add program
+          </Button>
+        </div>
       </div>
 
       <br />
 
+      {/* Health programs list */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 overflow-y-auto max-h-[calc(100vh-240px)]">
-        {[
-          1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-        ].map((program) => (
-          <HealthProgram program={program} key={program?.id} />
+        {programs?.filter(handleFilter)?.map((program) => (
+          <HealthProgram program={program} key={program?._id} />
         ))}
       </div>
+
+      {/* New program modal */}
       <Modal
         title={
           <Text size="xl" fw={700}>
@@ -75,10 +117,18 @@ function HealthPrograms() {
           initialValues={{ name: "", color: "" }}
           onSubmit={(values, { resetForm }) => {
             saveProgramToDB(values)
-              .then((res) => {
-                console.log(res)
-                resetForm()
-                handleCloseNewProgram()
+              .then((status_code) => {
+                if (status_code == 200) {
+                  notifications.show({
+                    message: "Health program created successfully",
+                    title: "Success",
+                    color: "green",
+                    icon: <IconCheck />,
+                  })
+                  fetchPrograms()
+                  resetForm()
+                  handleCloseNewProgram()
+                }
               })
               .catch(console.log)
           }}

@@ -2,22 +2,22 @@ import { Notification, Text } from "@mantine/core"
 import moment from "moment"
 import React from "react"
 
-function HealthProgram() {
+function HealthProgram({ program }) {
   return (
     <div className="col-span-1 hover:cursor-pointer transition-all transition-100 ">
-      <Notification color="green" withCloseButton={false}>
+      <Notification color={program?.color} withCloseButton={false}>
         <div className="space-y-4">
           <div>
-            <Text size="xl">Malaria</Text>
+            <Text size="xl">{program?.name}</Text>
           </div>
 
           <div>
             <Text c="dimmed" size="sm">
-              34 clients
+              {program?.clientCount} clients
             </Text>
 
             <Text size="xs">
-              Created {moment(new Date()).format("Do MMM YYYY")}
+              Created {moment(program?.createdAt).format("Do MMM YYYY")}
             </Text>
           </div>
         </div>

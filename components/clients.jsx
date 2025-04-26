@@ -11,17 +11,23 @@ import {
   TextInput,
   useCombobox,
 } from "@mantine/core"
-import { IconInfoCircle, IconPlus } from "@tabler/icons-react"
+import { IconCheck, IconInfoCircle, IconPlus } from "@tabler/icons-react"
 import { Formik } from "formik"
-import React, { useCallback, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { AgGridReact } from "ag-grid-react"
 import moment from "moment"
 import Link from "next/link"
+import { notifications } from "@mantine/notifications"
+import Client from "./client"
 
 function Clients() {
-  const [keyword, setKeyword] = useState("")
   const [newClient, setNewClient] = useState(false)
+  const [clients, setClients] = useState([])
+  const [programs, setPrograms] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [keyword, setKeyword] = useState("")
 
+  // Handle keyword change for search filter
   const handleChangeKeyword = useCallback(
     (e) => {
       setKeyword(e.target.value)
@@ -29,149 +35,99 @@ function Clients() {
     [keyword]
   )
 
+  // Opens new client modal
   const handleOpenNewClient = useCallback(() => {
     setNewClient(true)
   }, [newClient])
 
+  // Closes new client modal
   const handleCloseNewClient = useCallback(() => {
     setNewClient(false)
   }, [newClient])
 
-  const sampleOptions = [
-    { value: "malaria", label: "Malaria" },
-    { value: "cholera", label: "Cholera" },
-    { value: "covid", label: "COVID-19" },
-    { value: "typhoid", label: "Typhoid" },
-  ]
+  // Fetches clients and saves the clients in a state container
+  const fetchClients = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/get_clients")
+      const data = await res.json()
 
-  const [rowData, setRowData] = useState([
-    { make: "Tesla", model: "Model Y", price: 64950, electric: true },
-    { make: "Ford", model: "F-Series", price: 33850, electric: false },
-    { make: "Toyota", model: "Corolla", price: 29600, electric: false },
-  ])
-
-  const ViewProfile = ({ data }) => {
-    const [profileOpen, setProfileOpen] = useState(false)
-
-    const handleOpenProfile = useCallback(() => {
-      setProfileOpen(true)
-    }, [profileOpen])
-
-    const handleCloseProfile = useCallback(() => {
-      setProfileOpen(false)
-    }, [profileOpen])
-
-    return (
-      <div className="flex items-center space-x-1 p-1">
-        <Button size="xs" onClick={handleOpenProfile}>
-          View profile
-        </Button>
-
-        <Modal
-          title={
-            <Text size="xl" fw={700}>
-              {data?.name}
-            </Text>
-          }
-          centered
-          opened={profileOpen}
-          onClose={handleCloseProfile}
-        >
-          <div className="p-4 space-y-2">
-            <Text>
-              Age: <strong>{data?.age}</strong>
-            </Text>
-            <Text>
-              Weight: <strong>{data?.weight} kg</strong>
-            </Text>
-            <Text>
-              Height: <strong>{data?.height} cm</strong>
-            </Text>
-            <Text>
-              Date registered:{" "}
-              <strong>{moment(new Date()).format("Do MMM YYYY")}</strong>
-            </Text>
-            <br />
-            <Table striped>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Health program</Table.Th>
-                  <Table.Th>Date enrolled</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                <Table.Tr>
-                  <Table.Td>
-                    <Badge>Malaria</Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    {moment(new Date()).format("Do MMM YYYY")}
-                  </Table.Td>
-                </Table.Tr>
-              </Table.Tbody>
-            </Table>
-
-            <Alert
-              variant="light"
-              color="blue"
-              title="API endpoint"
-              icon={<IconInfoCircle />}
-            >
-              This client profile has an id of `{data?.id}`. It has been exposed
-              thorough an endpoint of{" "}
-              <Link
-                target="_blank"
-                className="underline hover:cursor-pointer"
-                href={
-                  process.env.NEXT_PUBLIC_SITE_URL + "/api/client/" + data?.id
-                }
-              >
-                {process.env.NEXT_PUBLIC_SITE_URL + "/api/client/" + data?.id}
-              </Link>
-            </Alert>
-          </div>
-        </Modal>
-      </div>
-    )
+      setClients(data.clients)
+    } catch (error) {
+      console.log("Failed to fetch clients", error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  // Column Definitions: Defines the columns to be displayed.
-  const [colDefs, setColDefs] = useState([
-    { field: "name", filter: true, floatingFilter: true },
-    { field: "age", width: 120, filter: true, floatingFilter: true },
-    { field: "weight", width: 120, filter: true, floatingFilter: true },
-    { field: "height", width: 120, filter: true, floatingFilter: true },
-    { field: "date registered", filter: true, floatingFilter: true },
+  // Fetches programs and saves them in a state to render them (programs) in a Select component
+  const fetchPrograms = async () => {
+    try {
+      const res = await fetch("/api/get_programs")
+      const data = await res.json()
 
-    { field: "programs", flex: 1, filter: true, floatingFilter: true },
-    {
-      field: "",
-      width: 140,
-      pinned: "right",
-      cellRenderer: ViewProfile,
-    },
-  ])
+      let formatted_options = data?.programs?.map((program) => ({
+        value: program?._id,
+        label: program?.name,
+      }))
+
+      setPrograms(formatted_options)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  // This function is a callback that compares each program to the search query
+  const handleFilter = (client) =>
+    keyword.length === 0 ||
+    client?.name?.toLowerCase()?.includes(keyword.toLowerCase())
+
+  const handleAddNewClient = async (client) => {
+    return fetch("/api/new_client", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(client),
+    }).then(async (res) => {
+      return res.status
+    })
+  }
+
+  // Fetch clients and programs on initial load
+  useEffect(() => {
+    fetchClients()
+    fetchPrograms()
+  }, [])
 
   return (
     <div className="p-4">
-      <div className="flex space-x-4 items-center">
-        <Input
-          placeholder="Search client ex. Mary Gakuyo"
-          value={keyword}
-          className="w-4/5"
-          onChange={handleChangeKeyword}
-        />
-        <Button onClick={handleOpenNewClient} leftSection={<IconPlus />}>
-          Add client
-        </Button>
+      {/* Client search */}
+      <div className="lg:flex space-y-2 space-x-4 items-center">
+        <div className="lg:w-4/5">
+          <Input
+            className="w-full"
+            placeholder="Search client ex. Maria"
+            value={keyword}
+            onChange={handleChangeKeyword}
+          />
+        </div>
+
+        <div className="flex justify-center ">
+          <Button onClick={handleOpenNewClient} leftSection={<IconPlus />}>
+            Add client
+          </Button>
+        </div>
       </div>
 
       <br />
 
-      <div className="overflow-y-auto h-[calc(100vh-270px)] max-h-[calc(100vh-240px)]">
-        <AgGridReact rowData={rowData} columnDefs={colDefs} />
+      {/* Client list */}
+      <div className="overflow-y-auto space-y-2  max-h-[calc(100vh-240px)]">
+        {clients?.filter(handleFilter)?.map((client) => (
+          <Client client={client} />
+        ))}
       </div>
 
+      {/* Add client modal */}
       <Modal
         title={
           <Text size="xl" fw={700}>
@@ -191,7 +147,21 @@ function Clients() {
             height: null,
             programs: [],
           }}
-          onSubmit={(values, { resetForm }) => {}}
+          onSubmit={(values, { resetForm }) => {
+            handleAddNewClient(values).then((status_code) => {
+              if (status_code == 200) {
+                notifications.show({
+                  title: "Success",
+                  message: "Client created successfully",
+                  color: "green",
+                  icon: <IconCheck />,
+                })
+                fetchClients()
+                resetForm()
+                handleCloseNewClient()
+              }
+            })
+          }}
         >
           {({ values, handleChange, handleSubmit, setFieldValue }) => (
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
@@ -226,7 +196,7 @@ function Clients() {
                 rightSection={<p className="mr-8">kg</p>}
               />
               <MultiSelect
-                data={sampleOptions}
+                data={programs}
                 label="Health programs"
                 placeholder="Pick one or more"
                 searchable

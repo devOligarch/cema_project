@@ -5,7 +5,7 @@ function Header() {
   return (
     <div className="flex p-4 justify-between w-full ">
       <div className="h-[40px] w-[10px]" />
-      <Avatar color="red">SK</Avatar>
+      <Avatar color="red">AA</Avatar>
     </div>
   )
 }

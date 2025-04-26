@@ -1,3 +1,5 @@
+// This file contains the entry point for the application. Contains the Tab component to render the 2 tabs
+
 import { Tabs } from "@mantine/core"
 import React from "react"
 import HealthPrograms from "./health_programs"
