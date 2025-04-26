@@ -33,9 +33,9 @@ A simple, clean **Health Information Management System** where doctors can manag
 
 ## 🚀 Live Demo
 
-👉 [Live Site]([https://cema-project.vercel.app](https://cema-project.vercel.app/))
+👉 https://cema-project.vercel.app/
 
-👉 [Video demo]([https://drive.google.com/file/d/1Z_L2BuGfrm9uX8oPHyvaAWEIribNYNSh/view?usp=drivesdk](https://drive.google.com/file/d/1Z_L2BuGfrm9uX8oPHyvaAWEIribNYNSh/view?usp=drivesdk)/))
+👉 https://drive.google.com/file/d/1Z_L2BuGfrm9uX8oPHyvaAWEIribNYNSh/view?usp=drivesdk
 
 ---
 
