@@ -104,6 +104,7 @@ function HealthPrograms() {
 
       {/* New program modal */}
       <Modal
+        closeOnClickOutside={false}
         title={
           <Text size="xl" fw={700}>
             Create new program

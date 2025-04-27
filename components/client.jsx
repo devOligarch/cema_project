@@ -43,6 +43,7 @@ function Client({ client }) {
       </Card>
 
       <Modal
+        closeOnClickOutside={false}
         size={"100%"}
         title={
           <Text size="xl" fw={700}>

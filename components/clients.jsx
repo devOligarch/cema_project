@@ -129,6 +129,7 @@ function Clients() {
 
       {/* Add client modal */}
       <Modal
+        closeOnClickOutside={false}
         title={
           <Text size="xl" fw={700}>
             Add a new client
@@ -199,6 +200,7 @@ function Clients() {
                 data={programs}
                 label="Health programs"
                 placeholder="Pick one or more"
+                description="Refresh page to get all programs"
                 searchable
                 clearable
                 value={values.programs}
